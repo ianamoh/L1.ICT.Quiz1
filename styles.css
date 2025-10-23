@@ -1,0 +1,248 @@
+/* --- Global Reset and Typography --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f9; /* Very light blue/gray background */
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
+
+/* Central container for the entire quiz */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Header and Branding --- */
+h1 {
+    color: #007bff; /* Primary academic blue */
+    border-bottom: 2px solid #e0e6ed;
+    padding-bottom: 15px;
+    margin-top: 0;
+    font-size: 2em;
+}
+
+.instructor-tag {
+    font-size: 0.5em; 
+    font-weight: 300; 
+    vertical-align: middle;
+    color: #6c757d; /* Muted gray for secondary info */
+}
+
+/* --- Student Info Section (Header) --- */
+.header-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #e9f0f6; /* Lightest blue background */
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+}
+
+.header-section label {
+    font-weight: bold;
+    color: #333;
+    margin-right: 5px;
+}
+
+#student-id, #student-name {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    flex-grow: 1; /* Allows inputs to fill space */
+    min-width: 150px;
+}
+
+#student-name {
+    background-color: #f8f8f8;
+    color: #555;
+}
+
+/* --- Question Area --- */
+#quiz-container {
+    padding-top: 20px;
+}
+
+.question {
+    margin-bottom: 25px;
+    padding: 20px;
+    border: 1px solid #dee2e6; /* Light divider */
+    border-radius: 8px;
+    background-color: #ffffff;
+    transition: box-shadow 0.3s ease;
+}
+
+.question:hover {
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.1); /* Subtle blue glow on hover */
+}
+
+.question strong {
+    display: block;
+    margin-bottom: 15px;
+    font-size: 1.15em;
+    color: #004d99; /* Darker blue for question text */
+}
+
+/* --- Options/Radio Buttons --- */
+.option {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 0;
+}
+
+.option label {
+    margin-left: 10px;
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+.option input[type="radio"] {
+    /* Style the radio button itself */
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    margin-right: 10px;
+    position: relative;
+    cursor: pointer;
+    top: 2px;
+}
+
+.option input[type="radio"]:checked {
+    border-color: #007bff;
+    background-color: #007bff;
+}
+
+.option input[type="radio"]:checked::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* --- Pagination Controls --- */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    padding: 10px 0;
+    border-top: 1px dashed #ccc;
+}
+
+.pagination-controls button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s;
+}
+
+.pagination-controls button:hover {
+    background-color: #0056b3;
+}
+
+.pagination-controls span {
+    font-weight: bold;
+    color: #555;
+}
+
+/* --- Submit Button --- */
+#submit-button {
+    display: block;
+    width: 100%;
+    padding: 15px 0;
+    margin-top: 30px;
+    background-color: #28a745; /* Green for submit */
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+#submit-button:hover {
+    background-color: #218838; /* Darker green on hover */
+    transform: translateY(-1px);
+}
+
+#submit-button:active {
+    transform: translateY(0);
+}
+
+/* Style for disabled state */
+#submit-button[disabled], #submit-button.submitted {
+    background-color: #6c757d; /* Gray when disabled/submitted */
+    cursor: not-allowed;
+    transform: none;
+}
+
+
+/* --- Mobile Responsiveness Adjustments (The @media Query) --- */
+@media (max-width: 600px) {
+    
+    .container {
+        margin: 20px 10px; /* Smaller margins on small screens */
+        padding: 20px 15px;
+    }
+    
+    /* Force header elements (Code, Name inputs) to stack vertically */
+    .header-section {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    /* Ensure labels and inputs take full width when stacked */
+    .header-section label {
+        align-self: flex-start;
+        margin-bottom: -10px; /* Pulls the input closer to the label */
+    }
+
+    #student-id, #student-name {
+        width: 100%; /* Take up the entire width of the container */
+        min-width: unset;
+    }
+
+    h1 {
+        font-size: 1.5em; /* Shrink the main title */
+        padding-bottom: 10px;
+    }
+
+    #submit-button {
+        padding: 12px 0;
+        font-size: 1.1em;
+    }
+    
+    /* Ensure pagination buttons look good on small screens */
+    .pagination-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .pagination-controls button {
+        width: 100%;
+    }
+}
