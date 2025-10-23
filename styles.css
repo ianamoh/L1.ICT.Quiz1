@@ -91,7 +91,7 @@ h1 {
     color: #004d99; /* Darker blue for question text */
 }
 
-/* --- Options/Radio Buttons --- */
+/* --- Options/Checkbox Styling --- */
 .option {
     margin: 10px 0;
     display: flex;
@@ -106,31 +106,30 @@ h1 {
     flex-grow: 1;
 }
 
-.option input[type="radio"] {
-    /* Style the radio button itself */
+.option input[type="checkbox"] {
+    /* Style the checkbox itself */
     appearance: none;
     -webkit-appearance: none;
     width: 18px;
     height: 18px;
     border: 2px solid #ccc;
-    border-radius: 50%;
+    border-radius: 4px; /* Makes it square/rounded square */
     margin-right: 10px;
     position: relative;
     cursor: pointer;
     top: 2px;
 }
 
-.option input[type="radio"]:checked {
+.option input[type="checkbox"]:checked {
     border-color: #007bff;
     background-color: #007bff;
 }
 
-.option input[type="radio"]:checked::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: #fff;
-    border-radius: 50%;
+.option input[type="checkbox"]:checked::before {
+    /* Creates the checkmark symbol */
+    content: '✓'; 
+    font-size: 14px;
+    color: #fff;
     position: absolute;
     top: 50%;
     left: 50%;

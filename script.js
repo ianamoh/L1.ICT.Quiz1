@@ -11,7 +11,8 @@ let studentMap = {};
 // Pagination State
 const QUESTIONS_PER_PAGE = 5;
 let currentPage = 0; // Starts at page 0
-let studentAnswers = {}; // Stores all student answers: { qID: "selected text", ... }
+// studentAnswers now stores an array of selected option text for each question: { qID: ["text1", "text2"], ... }
+let studentAnswers = {}; 
 // --- End Configuration ---
 
 // --- Student Data Loading and Dropdown Functions ---
@@ -80,6 +81,7 @@ function loadQuestions() {
         });
 }
 
+// 2. Parse the raw text into a structured array (Updated for Multiple Correct Answers)
 function parseAndRenderQuestions(rawText) {
     const questionBlocks = rawText.split('---').filter(block => block.trim() !== '');
 
@@ -95,17 +97,22 @@ function parseAndRenderQuestions(rawText) {
             return { text, isCorrect };
         });
 
+        // Store an array of all correct answers (text)
+        const correctAnswers = options.filter(opt => opt.isCorrect).map(opt => opt.text);
+        
         return {
             id: `q${index + 1}`,
             question: questionText,
             options: options,
-            correctAnswer: options.find(opt => opt.isCorrect)?.text 
+            // The correct answer is now an array of strings
+            correctAnswer: correctAnswers 
         };
-    }).filter(q => q.correctAnswer);
+    }).filter(q => q.correctAnswer.length > 0); // Ensure at least one correct answer exists
 
     renderQuiz();
 }
 
+// 3. Render the structured questions as HTML elements (Updated for Checkboxes)
 function renderQuiz() {
     const container = document.getElementById('quiz-container');
     container.innerHTML = '';
@@ -115,7 +122,6 @@ function renderQuiz() {
         return;
     }
 
-    // Calculate which questions to render based on the current page
     const startIndex = currentPage * QUESTIONS_PER_PAGE;
     const endIndex = startIndex + QUESTIONS_PER_PAGE;
     const questionsToRender = quizData.slice(startIndex, endIndex);
@@ -127,16 +133,22 @@ function renderQuiz() {
         
         questionDiv.innerHTML = `<strong>${globalIndex + 1}. ${q.question}</strong><br>`; 
 
+        // Retrieve the student's previously selected answers for this question (defaults to empty array)
+        const selectedAnswers = studentAnswers[q.id] || [];
+
         q.options.forEach((option, oIndex) => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
             
+            // TYPE IS NOW CHECKBOX
             const inputName = `question_${q.id}`; 
             const inputId = `${q.id}_option_${oIndex}`;
-            const isChecked = studentAnswers[q.id] === option.text; // Check if this option was previously selected
+            
+            // Check if the current option's text is in the stored array of answers
+            const isChecked = selectedAnswers.includes(option.text);
 
             optionDiv.innerHTML = `
-                <input type="radio" id="${inputId}" name="${inputName}" value="${option.text}" ${isChecked ? 'checked' : ''} required>
+                <input type="checkbox" id="${inputId}" name="${inputName}" value="${option.text}" ${isChecked ? 'checked' : ''}>
                 <label for="${inputId}">${option.text}</label>
             `;
             questionDiv.appendChild(optionDiv);
@@ -145,12 +157,12 @@ function renderQuiz() {
         container.appendChild(questionDiv);
     });
     
-    // Add pagination controls after the questions
     renderPaginationControls(container);
 }
 
 // --- Pagination and Navigation Functions ---
 
+// Function to handle saving answers on the current page (Updated to capture array of values)
 function saveCurrentAnswers() {
     const startIndex = currentPage * QUESTIONS_PER_PAGE;
     const endIndex = startIndex + QUESTIONS_PER_PAGE;
@@ -158,11 +170,12 @@ function saveCurrentAnswers() {
 
     questionsOnPage.forEach(q => {
         const inputName = `question_${q.id}`;
-        const selectedOption = document.querySelector(`input[name="${inputName}"]:checked`);
         
-        if (selectedOption) {
-            studentAnswers[q.id] = selectedOption.value;
-        }
+        // Use querySelectorAll to find ALL checked checkboxes for this question
+        const checkedOptions = document.querySelectorAll(`input[name="${inputName}"]:checked`);
+        
+        // Store the array of selected answers for this question
+        studentAnswers[q.id] = Array.from(checkedOptions).map(input => input.value);
     });
 }
 
@@ -171,7 +184,6 @@ function renderPaginationControls(container) {
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'pagination-controls';
 
-    // Previous Button
     if (currentPage > 0) {
         const prevButton = document.createElement('button');
         prevButton.textContent = '← Previous';
@@ -179,7 +191,6 @@ function renderPaginationControls(container) {
         controlsDiv.appendChild(prevButton);
     }
     
-    // Next Button (or Finish Button)
     if (currentPage < totalPages - 1) {
         const nextButton = document.createElement('button');
         nextButton.textContent = 'Next Page →';
@@ -187,14 +198,12 @@ function renderPaginationControls(container) {
         controlsDiv.appendChild(nextButton);
     }
 
-    // Display page number
     const pageStatus = document.createElement('span');
     pageStatus.textContent = `Page ${currentPage + 1} of ${totalPages}`;
     controlsDiv.appendChild(pageStatus);
     
     container.appendChild(controlsDiv);
 
-    // Show/Hide the final submission button
     const submitButton = document.getElementById('submit-button');
     if (currentPage === totalPages - 1) {
         submitButton.style.display = 'block';
@@ -209,7 +218,7 @@ function navigatePage(direction) {
     renderQuiz();
 }
 
-// --- Submission Handler ---
+// --- Submission Handler (Updated for Strict Multi-Selection Scoring) ---
 
 document.getElementById('quiz-form').addEventListener('submit', function(event) {
     event.preventDefault(); 
@@ -222,25 +231,33 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         return;
     }
     
-    // STEP 1: Define a unique key for this student's submission on this browser.
     const submissionKey = `test_submitted_${studentId}`;
 
-    // STEP 2: CHECK FOR LOCAL STORAGE FLAG (Client-side duplicate prevention)
     if (localStorage.getItem(submissionKey) === 'true') {
         alert("❌ Error: ER0001 - This test has already been completed and submitted from this browser for this Student ID. If this is an error, please contact your instructor.");
         return; 
     }
 
-    // --- SCORING LOGIC ---
-    // 1. Final Save: Make sure the answers on the LAST page are recorded
-    saveCurrentAnswers(); 
+    // --- SCORING LOGIC (STRICT MATCH) ---
+    saveCurrentAnswers(); // Final save of the last page's answers
 
     let score = 0;
     const totalQuestions = quizData.length; 
 
-    // 2. Iterate over ALL questions and check stored answers
+    // Iterate over ALL questions
     quizData.forEach(q => {
-        if (studentAnswers[q.id] === q.correctAnswer) {
+        // Sort both arrays for guaranteed comparison order
+        const correctOptions = q.correctAnswer.sort();
+        const studentSelections = studentAnswers[q.id] ? studentAnswers[q.id].sort() : [];
+        
+        // Check 1: Must have the exact same number of answers
+        const lengthMatch = studentSelections.length === correctOptions.length;
+        
+        // Check 2: If the lengths match, check if every element is identical
+        const contentMatch = lengthMatch && correctOptions.every((val, index) => val === studentSelections[index]);
+
+        // Score 1 point ONLY if both conditions are met (strict matching)
+        if (contentMatch) {
             score++;
         }
     });
@@ -273,13 +290,10 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         body: JSON.stringify(submissionData) 
     })
     .then(() => {
-        // STEP 3: SET LOCAL STORAGE FLAG ON SUCCESS
         localStorage.setItem(submissionKey, 'true'); 
         
-        // MODIFIED ALERT: Simple confirmation, no score displayed
         alert(`✅ Test submitted successfully! Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`);
         
-        // Disable the form and inputs permanently
         document.getElementById('quiz-form').style.pointerEvents = 'none'; 
         document.getElementById('submit-button').textContent = 'Submitted (Disabled)';
     })
@@ -292,6 +306,5 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
 });
 
 // --- Initialization ---
-// Start the process by loading all necessary data when the script runs
 loadStudentData();
 loadQuestions();
