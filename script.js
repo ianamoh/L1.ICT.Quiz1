@@ -1,3 +1,4 @@
+//
 // --- Configuration ---
 // Your specific Google Apps Script Web App URL for data submission.
 const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzP8Ie9X5FSvyDAC2KG94a9HGmlFOHuy_vj2Lkv9mAY5JBPabVt4gYX5Ir48FWcW6rg/exec"; 
