@@ -19,41 +19,53 @@ A: Processing*
 
 ---
 
-Q: ///////:
-A: -*
-A: -
-A: -
+Q: Computers basically interpret data to:
+A: Numbers
+A: Digits*
+A: Letters
 
 ---
 
-Q: ///////:
-A: -*
-A: -
-A: -
+Q: Data stands for:
+A: raw input*
+A: processed input
+A: interpreted input
 
 ---
 
-Q: ///////:
-A: -*
-A: -
-A: -
+Q: Computers are:
+A: Hardware*
+A: Software*
+A: Programs*
 
 ---
-Q: ///////:
-A: -*
-A: -
-A: -
+
+Q: ICT improves:
+A: Communication*
+A: Productivity*
+A: Development*
 
 ---
-Q: ///////:
-A: -*
-A: -
-A: -
+
+Q: Literacy means:
+A: Intelligence
+A: Processing
+A: Development
 
 ---
-Q: ///////:
-A: -*
-A: -
-A: -
+
+Q: Digital literacy involves:
+A: Interpretation*
+A: Writing
+A: Skills*
+
+---
+
+Q: A good presentation should rely more on:
+A: text
+A: visual elements*
+A: voice*
+
+
 
 ---

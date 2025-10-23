@@ -1,4 +1,3 @@
-//******
 // --- Configuration ---
 // Your specific Google Apps Script Web App URL for data submission.
 const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzP8Ie9X5FSvyDAC2KG94a9HGmlFOHuy_vj2Lkv9mAY5JBPabVt4gYX5Ir48FWcW6rg/exec"; 
@@ -12,7 +11,7 @@ let studentMap = {};
 // Pagination State
 const QUESTIONS_PER_PAGE = 5;
 let currentPage = 0; // Starts at page 0
-// studentAnswers now stores an array of selected option text for each question: { qID: ["text1", "text2"], ... }
+// studentAnswers stores an array of selected option text for each question: { qID: ["text1", "text2"], ... }
 let studentAnswers = {}; 
 // --- End Configuration ---
 
@@ -219,6 +218,44 @@ function navigatePage(direction) {
     renderQuiz();
 }
 
+// Function to format all answers into a single string: (Q#:Ans1|Ans2, Q#:X)
+function formatAllAnswersForLogging() {
+    let logStringParts = [];
+
+    // Loop through every single question in the quizData array
+    quizData.forEach((q, index) => {
+        const questionNumber = index + 1;
+        const studentSelections = studentAnswers[q.id] || []; // Get the array of selected texts (or empty array)
+        
+        // Find the index (1-based) of the selected options
+        let selectedIndices = [];
+
+        // Check the student's selections against the full list of options for this question
+        q.options.forEach((option, optionIndex) => {
+            if (studentSelections.includes(option.text)) {
+                // Option index is 0-based, so add 1 for the 1-based answer number (A1, A2, etc.)
+                selectedIndices.push(optionIndex + 1);
+            }
+        });
+
+        let answerCode;
+        if (selectedIndices.length === 0) {
+            // No answer selected (represented by 'X')
+            answerCode = 'X';
+        } else {
+            // Combine selected answer numbers with the pipe '|' separator
+            answerCode = selectedIndices.join('|');
+        }
+
+        // Add the formatted part: (Q1:1, Q2:1|2, Q3:X)
+        logStringParts.push(`${questionNumber}:${answerCode}`);
+    });
+
+    // Join all question parts into one final string
+    return `(${logStringParts.join(', ')})`;
+}
+
+
 // --- Submission Handler (Updated for Strict Multi-Selection Scoring) ---
 
 document.getElementById('quiz-form').addEventListener('submit', function(event) {
@@ -245,7 +282,7 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
     let score = 0;
     const totalQuestions = quizData.length; 
 
-    // Iterate over ALL questions
+    // 2. Iterate over ALL questions and check stored answers
     quizData.forEach(q => {
         // Sort both arrays for guaranteed comparison order
         const correctOptions = q.correctAnswer.sort();
@@ -277,7 +314,9 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         studentName: studentName,
         studentId: studentId,
         score: score,
-        totalQuestions: totalQuestions
+        totalQuestions: totalQuestions,
+        // NEW: Add the formatted answer log
+        allAnswers: formatAllAnswersForLogging()
     };
 
     // SUBMIT DATA to Google Apps Script
