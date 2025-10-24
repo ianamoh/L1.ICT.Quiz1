@@ -258,6 +258,27 @@ function formatAllAnswersForLogging() {
 
 // --- Submission Handler (Updated for Strict Multi-Selection Scoring) ---
 
+// --- Submission Handler (WITH LOADING INDICATOR) ---
+
+// --- Submission Handler (WITH LOADING INDICATOR) ---
+
+function setSubmissionState(isLoading) {
+    const button = document.getElementById('submit-button');
+    const textSpan = document.getElementById('submit-text');
+    
+    if (isLoading) {
+        // State: Loading (Show spinner, disable clicks)
+        button.classList.add('loading');
+        button.disabled = true; 
+    } else {
+        // State: Ready (Hide spinner, enable clicks)
+        button.classList.remove('loading');
+        button.disabled = false; 
+        textSpan.textContent = 'Submit Test'; // Reset text
+    }
+}
+
+
 document.getElementById('quiz-form').addEventListener('submit', function(event) {
     event.preventDefault(); 
     
@@ -275,73 +296,79 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         alert("❌ Error: ER0001 - This test has already been completed and submitted from this browser for this Student ID. If this is an error, please contact your instructor.");
         return; 
     }
+    
+    // START: Activate the loading spinner and disable the button
+    setSubmissionState(true);
 
-    // --- SCORING LOGIC (STRICT MATCH) ---
-    saveCurrentAnswers(); // Final save of the last page's answers
-
+    // --- SCORING LOGIC (Remains the same) ---
+    saveCurrentAnswers();
     let score = 0;
     const totalQuestions = quizData.length; 
 
-    // 2. Iterate over ALL questions and check stored answers
     quizData.forEach(q => {
-        // Sort both arrays for guaranteed comparison order
         const correctOptions = q.correctAnswer.sort();
         const studentSelections = studentAnswers[q.id] ? studentAnswers[q.id].sort() : [];
-        
-        // Check 1: Must have the exact same number of answers
         const lengthMatch = studentSelections.length === correctOptions.length;
-        
-        // Check 2: If the lengths match, check if every element is identical
         const contentMatch = lengthMatch && correctOptions.every((val, index) => val === studentSelections[index]);
-
-        // Score 1 point ONLY if both conditions are met (strict matching)
         if (contentMatch) {
             score++;
         }
     });
-    
-    // Check if the student answered every single question before submission (Optional)
+
+    // Incomplete Test Warning (Remains the same)
     if (Object.keys(studentAnswers).length < totalQuestions) {
          if (!confirm(`You have only answered ${Object.keys(studentAnswers).length} out of ${totalQuestions} questions. Are you sure you want to submit?`)) {
+             setSubmissionState(false); // Re-enable button on cancel
              return; 
          }
     }
     
-    // --- END SCORING LOGIC ---
-
-    // PREPARE DATA FOR SUBMISSION 
+    // PREPARE DATA FOR SUBMISSION (Remains the same)
     const submissionData = {
-        studentName: studentName,
-        studentId: studentId,
-        score: score,
-        totalQuestions: totalQuestions,
-        // NEW: Add the formatted answer log
+        studentName: studentName, studentId: studentId,
+        score: score, totalQuestions: totalQuestions,
         allAnswers: formatAllAnswersForLogging()
     };
 
-    // SUBMIT DATA to Google Apps Script
+    // --- FINAL SUBMISSION LOGIC FIX ---
     fetch(GOOGLE_SHEET_WEB_APP_URL, {
-        method: 'POST',
+        method: 'POST', 
         mode: 'no-cors', 
         cache: 'no-cache',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submissionData) 
     })
-    .then(() => {
+ .then(() => {
+        // 1. Set final state and STOP spinner IMMEDIATELY
+        const button = document.getElementById('submit-button');
+        button.textContent = 'Submitted (Disabled)';
+        button.classList.remove('loading'); 
+
+        // 2. Set client-side flag
         localStorage.setItem(submissionKey, 'true'); 
+
+        // 3. Disable the form
+        document.getElementById('quiz-form').style.pointerEvents = 'none';
+
+        // 4. DISPLAY NON-BLOCKING SUCCESS MESSAGE
+        const successDiv = document.getElementById('success-message');
+        const studentName = document.getElementById('student-name').value.trim();
         
-        alert(`✅ Test submitted successfully! Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`);
-        
-        document.getElementById('quiz-form').style.pointerEvents = 'none'; 
-        document.getElementById('submit-button').textContent = 'Submitted (Disabled)';
+        successDiv.innerHTML = `✅ **Test Submitted!** Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`;
+        successDiv.style.display = 'block'; // Make the message visible
+
+        // No alert() means no blocking, allowing the spinner to stop instantly!
     })
+    // ... [rest of the .catch block remains the same] ...
+    // ... [rest of the .catch block remains the same] ...
     .catch(error => {
-        console.error('Error submitting data:', error);
-        alert('❌ There was a network error submitting your test. Please check your connection and try again.');
+        // **TRUE ERROR LOGIC:** This should only run if the network connection fails completely.
+        console.error('CRITICAL Network Error:', error);
+        alert('❌ CRITICAL NETWORK ERROR. Please check connection and try again.');
+        
+        // Re-enable button and stop spinner on true failure
+        setSubmissionState(false); 
         document.getElementById('quiz-form').style.pointerEvents = 'auto'; 
-        document.getElementById('submit-button').textContent = 'Submit Test';
     });
 });
 

@@ -198,6 +198,34 @@ h1 {
     transform: none;
 }
 
+/* --- Loading Spinner Styles (MOVED OUTSIDE MEDIA QUERY) --- */
+#loading-spinner {
+    /* Initially hidden by display: none; */
+    width: 20px;
+    height: 20px;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff; /* White color for visibility inside the button */
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: none; /* Default hidden state */
+}
+
+/* Keyframes for the spinner animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Adjust button content when spinner is active */
+#submit-button.loading #loading-spinner {
+    display: block; /* Show spinner */
+}
+
+#submit-button.loading #submit-text {
+    display: none; /* Hide button text */
+}
+
 
 /* --- Mobile Responsiveness Adjustments (The @media Query) --- */
 @media (max-width: 600px) {
