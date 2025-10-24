@@ -200,7 +200,6 @@ h1 {
 
 /* --- Loading Spinner Styles (MOVED OUTSIDE MEDIA QUERY) --- */
 #loading-spinner {
-    /* Initially hidden by display: none; */
     width: 20px;
     height: 20px;
     margin: 0 auto;

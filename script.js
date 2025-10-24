@@ -13,6 +13,10 @@ const QUESTIONS_PER_PAGE = 5;
 let currentPage = 0; // Starts at page 0
 // studentAnswers stores an array of selected option text for each question: { qID: ["text1", "text2"], ... }
 let studentAnswers = {}; 
+
+// --- Device Security Flag ---
+const DEVICE_SUBMITTED_KEY = 'device_used_for_test';
+
 // --- End Configuration ---
 
 // --- Student Data Loading and Dropdown Functions ---
@@ -222,59 +226,80 @@ function navigatePage(direction) {
 function formatAllAnswersForLogging() {
     let logStringParts = [];
 
-    // Loop through every single question in the quizData array
     quizData.forEach((q, index) => {
         const questionNumber = index + 1;
-        const studentSelections = studentAnswers[q.id] || []; // Get the array of selected texts (or empty array)
+        const studentSelections = studentAnswers[q.id] || []; 
         
-        // Find the index (1-based) of the selected options
         let selectedIndices = [];
 
-        // Check the student's selections against the full list of options for this question
         q.options.forEach((option, optionIndex) => {
             if (studentSelections.includes(option.text)) {
-                // Option index is 0-based, so add 1 for the 1-based answer number (A1, A2, etc.)
                 selectedIndices.push(optionIndex + 1);
             }
         });
 
         let answerCode;
         if (selectedIndices.length === 0) {
-            // No answer selected (represented by 'X')
             answerCode = 'X';
         } else {
-            // Combine selected answer numbers with the pipe '|' separator
             answerCode = selectedIndices.join('|');
         }
 
-        // Add the formatted part: (Q1:1, Q2:1|2, Q3:X)
         logStringParts.push(`${questionNumber}:${answerCode}`);
     });
 
-    // Join all question parts into one final string
     return `(${logStringParts.join(', ')})`;
 }
 
 
-// --- Submission Handler (Updated for Strict Multi-Selection Scoring) ---
+// --- Submission Handler (WITH NON-BLOCKING SUCCESS MESSAGE) ---
 
-// --- Submission Handler (WITH LOADING INDICATOR) ---
-
-// --- Submission Handler (WITH LOADING INDICATOR) ---
+// --- Submission Handler (WITH HARDENED SECURITY MESSAGING) ---
 
 function setSubmissionState(isLoading) {
     const button = document.getElementById('submit-button');
     const textSpan = document.getElementById('submit-text');
     
     if (isLoading) {
-        // State: Loading (Show spinner, disable clicks)
         button.classList.add('loading');
         button.disabled = true; 
     } else {
-        // State: Ready (Hide spinner, enable clicks)
         button.classList.remove('loading');
         button.disabled = false; 
-        textSpan.textContent = 'Submit Test'; // Reset text
+        textSpan.textContent = 'Submit Test';
+    }
+}
+
+// Function to lock the entire quiz on success (Remains the same)
+function lockQuizPermanently() {
+    document.getElementById('quiz-form').style.pointerEvents = 'none';
+    const headerSection = document.getElementById('header-section');
+    if (headerSection) {
+        headerSection.style.pointerEvents = 'none'; // Lock the dropdown too
+    }
+    // Set the global device lock flag
+    localStorage.setItem(DEVICE_SUBMITTED_KEY, 'true');
+}
+
+// Function to check device status on page load (Red Lockout - Neutralized Message)
+function checkDeviceLock() {
+    const statusDiv = document.getElementById('status-message');
+    
+    if (localStorage.getItem(DEVICE_SUBMITTED_KEY) === 'true') {
+        // Display RED lockout banner on hard refresh
+        
+        statusDiv.style.display = 'block';
+        statusDiv.style.backgroundColor = '#f8d7da'; // Light red background
+        statusDiv.style.color = '#721c24'; // Dark red text
+        statusDiv.style.border = '1px solid #f5c6cb'; // Red border
+        statusDiv.innerHTML = `
+            ❌ **Attempt Not Allowed!** <br>Your submission attempt for this test has already been recorded. 
+            <br>Please contact Dr. Naoumi if you believe this is an error.
+        `;
+        
+        const container = document.getElementById('quiz-container');
+        container.innerHTML = ''; // Clear the quiz questions visually
+        lockQuizPermanently(); // Visually lock the entire form (dropdown, buttons)
     }
 }
 
@@ -291,13 +316,16 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
     }
     
     const submissionKey = `test_submitted_${studentId}`;
+    
+    // --- COMBINED SECURITY CHECK (Neutralized Messaging) ---
+    // If EITHER the specific ID flag OR the general device flag exists, block submission.
 
-    if (localStorage.getItem(submissionKey) === 'true') {
-        alert("❌ Error: ER0001 - This test has already been completed and submitted from this browser for this Student ID. If this is an error, please contact your instructor.");
+    if (localStorage.getItem(submissionKey) === 'true' || localStorage.getItem(DEVICE_SUBMITTED_KEY) === 'true') {
+        alert("❌ Error: Submission not permitted. This test has been recorded or an attempt has been made.");
         return; 
     }
     
-    // START: Activate the loading spinner and disable the button
+    // START: Activate the loading spinner
     setSubmissionState(true);
 
     // --- SCORING LOGIC (Remains the same) ---
@@ -315,7 +343,7 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         }
     });
 
-    // Incomplete Test Warning (Remains the same)
+    // Incomplete Test Warning
     if (Object.keys(studentAnswers).length < totalQuestions) {
          if (!confirm(`You have only answered ${Object.keys(studentAnswers).length} out of ${totalQuestions} questions. Are you sure you want to submit?`)) {
              setSubmissionState(false); // Re-enable button on cancel
@@ -330,7 +358,7 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         allAnswers: formatAllAnswersForLogging()
     };
 
-    // --- FINAL SUBMISSION LOGIC FIX ---
+    // --- FINAL SUBMISSION LOGIC ---
     fetch(GOOGLE_SHEET_WEB_APP_URL, {
         method: 'POST', 
         mode: 'no-cors', 
@@ -338,40 +366,50 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submissionData) 
     })
- .then(() => {
-        // 1. Set final state and STOP spinner IMMEDIATELY
+    .then(() => {
+        // SUCCESS: Lock both device and ID, and show success message
+        localStorage.setItem(submissionKey, 'true'); 
+        localStorage.setItem(DEVICE_SUBMITTED_KEY, 'true'); 
+        
         const button = document.getElementById('submit-button');
         button.textContent = 'Submitted (Disabled)';
         button.classList.remove('loading'); 
+        lockQuizPermanently(); 
 
-        // 2. Set client-side flag
-        localStorage.setItem(submissionKey, 'true'); 
-
-        // 3. Disable the form
-        document.getElementById('quiz-form').style.pointerEvents = 'none';
-
-        // 4. DISPLAY NON-BLOCKING SUCCESS MESSAGE
-        const successDiv = document.getElementById('success-message');
+        const statusDiv = document.getElementById('status-message');
         const studentName = document.getElementById('student-name').value.trim();
         
-        successDiv.innerHTML = `✅ **Test Submitted!** Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`;
-        successDiv.style.display = 'block'; // Make the message visible
-
-        // No alert() means no blocking, allowing the spinner to stop instantly!
-    })
-    // ... [rest of the .catch block remains the same] ...
-    // ... [rest of the .catch block remains the same] ...
-    .catch(error => {
-        // **TRUE ERROR LOGIC:** This should only run if the network connection fails completely.
-        console.error('CRITICAL Network Error:', error);
-        alert('❌ CRITICAL NETWORK ERROR. Please check connection and try again.');
+        statusDiv.style.backgroundColor = '#d4edda';
+        statusDiv.style.color = '#155724';
+        statusDiv.style.border = '1px solid #c3e6cb';
         
-        // Re-enable button and stop spinner on true failure
+        statusDiv.innerHTML = `✅ **Test Submitted!** Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`;
+        statusDiv.style.display = 'block'; 
+    })
+    .catch(error => {
+        // TRUE ERROR LOGIC
+        console.error('CRITICAL Network Error:', error);
+        
+        const statusDiv = document.getElementById('status-message');
+        statusDiv.style.display = 'block';
+        statusDiv.style.backgroundColor = '#f8d7da'; 
+        statusDiv.style.color = '#721c24'; 
+        statusDiv.style.border = '1px solid #f5c6cb'; 
+        statusDiv.innerHTML = '❌ **CRITICAL ERROR:** Submission failed due to a network issue. Please check your connection and try again.';
+        
         setSubmissionState(false); 
         document.getElementById('quiz-form').style.pointerEvents = 'auto'; 
     });
 });
 
 // --- Initialization ---
+// Make sure to call the new check on page load
+checkDeviceLock(); 
+loadStudentData();
+loadQuestions();
+
+// --- Initialization ---
+// Make sure to call the new check on page load
+checkDeviceLock(); 
 loadStudentData();
 loadQuestions();

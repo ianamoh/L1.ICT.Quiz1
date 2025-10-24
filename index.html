@@ -12,9 +12,13 @@
 
     <div class="container">
 
+        <div id="status-message" style="display: none; padding: 20px; margin-bottom: 20px; border-radius: 5px; font-weight: bold; text-align: center;">
+            
+        </div>
+        
         <h1>L1.ICT - Web Test <span class="instructor-tag">by Dr. Naoumi</span></h1>
 
-        <div class="header-section">
+        <div class="header-section" id="header-section">
             <label for="student-id">Select Code:</label>
             <select id="student-id" required>
                 <option value="" disabled selected>Select your Student Code</option>
@@ -30,18 +34,12 @@
             </div>
 
             <button type="submit" id="submit-button" style="display: none;">
-    <span id="submit-text">Submit Test</span>
-    <div id="loading-spinner" class="hidden"></div>
-</button>
+                <span id="submit-text">Submit Test</span>
+                <div id="loading-spinner"></div>
+            </button>
         </form>
 
     </div> 
-	
-<div class="container">
-        <div id="success-message" style="display: none; padding: 20px; margin-bottom: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px; font-weight: bold; text-align: center;">
-            
-        </div>
-        <h1>L1.ICT - Web Test <span class="instructor-tag">by Dr. Naoumi</span></h1>
     
     <script src="script.js"></script>
 </body>
