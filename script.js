@@ -17,7 +17,7 @@ let studentAnswers = {};
 const DEVICE_SUBMITTED_KEY = 'device_used_for_test';
 
 // --- Timer Configuration ---
-const TEST_DURATION_MINUTES = 1;
+const TEST_DURATION_MINUTES = 20;
 let timerInterval;
 let timeRemainingSeconds; 
 
