@@ -254,8 +254,6 @@ function formatAllAnswersForLogging() {
 
 // --- Submission Handler (WITH NON-BLOCKING SUCCESS MESSAGE) ---
 
-// --- Submission Handler (WITH HARDENED SECURITY MESSAGING) ---
-
 function setSubmissionState(isLoading) {
     const button = document.getElementById('submit-button');
     const textSpan = document.getElementById('submit-text');
@@ -316,10 +314,8 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
     }
     
     const submissionKey = `test_submitted_${studentId}`;
-    
-    // --- COMBINED SECURITY CHECK (Neutralized Messaging) ---
-    // If EITHER the specific ID flag OR the general device flag exists, block submission.
 
+    // --- COMBINED SECURITY CHECK (Neutralized Messaging) ---
     if (localStorage.getItem(submissionKey) === 'true' || localStorage.getItem(DEVICE_SUBMITTED_KEY) === 'true') {
         alert("❌ Error: Submission not permitted. This test has been recorded or an attempt has been made.");
         return; 
@@ -328,7 +324,7 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
     // START: Activate the loading spinner
     setSubmissionState(true);
 
-    // --- SCORING LOGIC (Remains the same) ---
+    // --- SCORING LOGIC ---
     saveCurrentAnswers();
     let score = 0;
     const totalQuestions = quizData.length; 
@@ -351,14 +347,14 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
          }
     }
     
-    // PREPARE DATA FOR SUBMISSION (Remains the same)
+    // PREPARE DATA FOR SUBMISSION 
     const submissionData = {
         studentName: studentName, studentId: studentId,
         score: score, totalQuestions: totalQuestions,
         allAnswers: formatAllAnswersForLogging()
     };
 
-    // --- FINAL SUBMISSION LOGIC ---
+    // --- FINAL SUBMISSION LOGIC FIX ---
     fetch(GOOGLE_SHEET_WEB_APP_URL, {
         method: 'POST', 
         mode: 'no-cors', 
@@ -367,46 +363,54 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         body: JSON.stringify(submissionData) 
     })
     .then(() => {
-        // SUCCESS: Lock both device and ID, and show success message
-        localStorage.setItem(submissionKey, 'true'); 
-        localStorage.setItem(DEVICE_SUBMITTED_KEY, 'true'); 
-        
+        // 1. **IMMEDIATE ACTIONS:** Stop spinner and set the permanent state
         const button = document.getElementById('submit-button');
         button.textContent = 'Submitted (Disabled)';
-        button.classList.remove('loading'); 
+        button.classList.remove('loading'); // Stop spinner visually immediately
+
+        // 2. Set client-side flag
+        localStorage.setItem(submissionKey, 'true'); 
+        localStorage.setItem(DEVICE_SUBMITTED_KEY, 'true'); // Lock the device
+
+        // 3. Disable the form and controls (non-blocking)
         lockQuizPermanently(); 
 
+        // 4. DISPLAY NON-BLOCKING SUCCESS MESSAGE (Setting GREEN success colors)
         const statusDiv = document.getElementById('status-message');
         const studentName = document.getElementById('student-name').value.trim();
         
-        statusDiv.style.backgroundColor = '#d4edda';
-        statusDiv.style.color = '#155724';
-        statusDiv.style.border = '1px solid #c3e6cb';
+        statusDiv.style.backgroundColor = '#d4edda'; // Light green background
+        statusDiv.style.color = '#155724'; // Dark green text
+        statusDiv.style.border = '1px solid #c3e6cb'; // Green border
         
+        // This runs instantly, allowing the spinner to stop
         statusDiv.innerHTML = `✅ **Test Submitted!** Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`;
         statusDiv.style.display = 'block'; 
+        
+        // 5. SCROLL: Smoothly scroll to the success message
+        statusDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     })
     .catch(error => {
         // TRUE ERROR LOGIC
         console.error('CRITICAL Network Error:', error);
         
         const statusDiv = document.getElementById('status-message');
+        
+        // Display the red error banner
         statusDiv.style.display = 'block';
         statusDiv.style.backgroundColor = '#f8d7da'; 
         statusDiv.style.color = '#721c24'; 
         statusDiv.style.border = '1px solid #f5c6cb'; 
         statusDiv.innerHTML = '❌ **CRITICAL ERROR:** Submission failed due to a network issue. Please check your connection and try again.';
         
+        // SCROLL: Smoothly scroll to the error message
+        statusDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+        
+        // Re-enable button and stop spinner on true failure
         setSubmissionState(false); 
         document.getElementById('quiz-form').style.pointerEvents = 'auto'; 
     });
 });
-
-// --- Initialization ---
-// Make sure to call the new check on page load
-checkDeviceLock(); 
-loadStudentData();
-loadQuestions();
 
 // --- Initialization ---
 // Make sure to call the new check on page load
