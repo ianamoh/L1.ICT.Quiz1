@@ -11,11 +11,15 @@ let studentMap = {};
 // Pagination State
 const QUESTIONS_PER_PAGE = 5;
 let currentPage = 0; // Starts at page 0
-// studentAnswers stores an array of selected option text for each question: { qID: ["text1", "text2"], ... }
 let studentAnswers = {}; 
 
 // --- Device Security Flag ---
 const DEVICE_SUBMITTED_KEY = 'device_used_for_test';
+
+// --- Timer Configuration ---
+const TEST_DURATION_MINUTES = 1;
+let timerInterval;
+let timeRemainingSeconds; 
 
 // --- End Configuration ---
 
@@ -252,6 +256,101 @@ function formatAllAnswersForLogging() {
 }
 
 
+// --- Timer Functions ---
+
+function startTimer() {
+    // Check if the device lock is active, do not start timer if locked
+    if (localStorage.getItem(DEVICE_SUBMITTED_KEY) === 'true') {
+        return;
+    }
+    
+    const duration = TEST_DURATION_MINUTES * 60; // Convert minutes to seconds
+    timeRemainingSeconds = duration;
+    
+    // Check local storage for remaining time (in case of accidental mid-test refresh)
+    const storedStartTime = localStorage.getItem('testStartTime');
+    
+    if (storedStartTime) {
+        const timeElapsed = Math.floor((Date.now() - storedStartTime) / 1000);
+        timeRemainingSeconds = duration - timeElapsed;
+        
+        // If time ran out while the student was away, end the test immediately
+        if (timeRemainingSeconds <= 0) {
+            endTestDueToTimeout();
+            return;
+        }
+    } else {
+        // First time starting the test, record the start time
+        localStorage.setItem('testStartTime', Date.now());
+    }
+    
+    // Display initial time and start the interval
+    displayTime();
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+    timeRemainingSeconds--;
+
+    if (timeRemainingSeconds <= 0) {
+        // Stop the timer and trigger the lockout procedure
+        clearInterval(timerInterval);
+        endTestDueToTimeout();
+        return;
+    }
+    
+    displayTime();
+}
+
+function displayTime() {
+    const display = document.getElementById('timer-display');
+    if (!display) return;
+    
+    const minutes = Math.floor(timeRemainingSeconds / 60);
+    const seconds = timeRemainingSeconds % 60;
+    
+    // Format to MM:SS
+    const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    display.textContent = `Time Remaining: ${formattedTime}`;
+    
+    // Change color when time is low to create urgency
+    if (timeRemainingSeconds <= 60) {
+        display.style.color = 'red';
+        display.style.fontWeight = 'bold';
+    } else {
+         // Keep blue color set in CSS for consistency if not urgent
+         display.style.color = '#dc3545';
+         display.style.fontWeight = 'bold';
+    }
+}
+
+function endTestDueToTimeout() {
+    // Check if the test has already been submitted to prevent double submission
+    if (localStorage.getItem(DEVICE_SUBMITTED_KEY) === 'true') {
+         return;
+    }
+    
+    // 1. Display the "Time is Up" message
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.style.display = 'block';
+    statusDiv.style.backgroundColor = '#cfe2ff'; // Light blue background
+    statusDiv.style.color = '#084298'; // Dark blue text
+    statusDiv.style.border = '1px solid #b6d4fe'; // Blue border
+    statusDiv.innerHTML = `
+        🔵 **Time Has Expired!** <br>Your answers have been automatically submitted for scoring. 
+        <br>Please contact Dr. Naoumi with any questions.
+    `;
+    
+    // 2. Automatically submit the current answers
+    // Note: This triggers the submit handler, which does the final locking and data logging.
+    const submitButton = document.getElementById('submit-button');
+    submitButton.click();
+    
+    // 3. Clean up (The submit handler will perform the permanent lock/cleanup)
+    localStorage.removeItem('testStartTime');
+}
+
 // --- Submission Handler (WITH NON-BLOCKING SUCCESS MESSAGE) ---
 
 function setSubmissionState(isLoading) {
@@ -363,19 +462,23 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         body: JSON.stringify(submissionData) 
     })
     .then(() => {
-        // 1. **IMMEDIATE ACTIONS:** Stop spinner and set the permanent state
+        // 1. Stop timer and clean up start time
+        clearInterval(timerInterval);
+        localStorage.removeItem('testStartTime'); 
+        
+        // 2. **IMMEDIATE ACTIONS:** Stop spinner and set the permanent state
         const button = document.getElementById('submit-button');
         button.textContent = 'Submitted (Disabled)';
         button.classList.remove('loading'); // Stop spinner visually immediately
 
-        // 2. Set client-side flag
+        // 3. Set client-side flag
         localStorage.setItem(submissionKey, 'true'); 
         localStorage.setItem(DEVICE_SUBMITTED_KEY, 'true'); // Lock the device
 
-        // 3. Disable the form and controls (non-blocking)
+        // 4. Disable the form and controls (non-blocking)
         lockQuizPermanently(); 
 
-        // 4. DISPLAY NON-BLOCKING SUCCESS MESSAGE (Setting GREEN success colors)
+        // 5. DISPLAY NON-BLOCKING SUCCESS MESSAGE (Setting GREEN success colors)
         const statusDiv = document.getElementById('status-message');
         const studentName = document.getElementById('student-name').value.trim();
         
@@ -387,13 +490,16 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
         statusDiv.innerHTML = `✅ **Test Submitted!** Thank you, ${studentName}. Your results will be released by Dr. Naoumi.`;
         statusDiv.style.display = 'block'; 
         
-        // 5. SCROLL: Smoothly scroll to the success message
+        // 6. SCROLL: Smoothly scroll to the success message
         statusDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     })
     .catch(error => {
         // TRUE ERROR LOGIC
         console.error('CRITICAL Network Error:', error);
         
+        // Stop timer on network failure
+        clearInterval(timerInterval);
+
         const statusDiv = document.getElementById('status-message');
         
         // Display the red error banner
@@ -417,3 +523,4 @@ document.getElementById('quiz-form').addEventListener('submit', function(event) 
 checkDeviceLock(); 
 loadStudentData();
 loadQuestions();
+startTimer();
