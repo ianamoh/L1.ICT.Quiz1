@@ -333,11 +333,15 @@ async function submitQuiz(isAutoSubmit = false) {
 
   try {
     //const res = await fetch(`${APPSCRIPT_URL}/submit`, {
-	const res = await fetch(`${APPSCRIPT_URL}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+	    const res = await fetch(`${APPSCRIPT_URL}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
       body: JSON.stringify(payload),
+      redirect: 'follow'
     });
+
     const data = await res.json();
     console.log("Submission result:", data);
 
