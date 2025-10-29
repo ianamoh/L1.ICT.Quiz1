@@ -86,51 +86,67 @@ async function validateStudent() {
 }
 
 // === LOAD QUESTIONS ===
+// === LOAD QUESTIONS (FIXED VERSION) ===
 async function loadQuestions() {
   try {
     const response = await fetch('questions.txt');
     const text = await response.text();
-    const lines = text.trim().split('\n');
     
-    let currentQuestion = null;
+    // Split by double newlines first (question blocks)
+    const blocks = text.split(/\n\s*\n/);
     window.quizData = [];
 
-    for (let line of lines) {
-      line = line.trim();
-      if (!line) continue;
+    blocks.forEach((block) => {
+      const lines = block.trim().split('\n').filter(line => line.trim());
+      if (lines.length === 0) return;
 
-      // Question line (starts with number and period)
-      if (/^\d+\./.test(line)) {
-        if (currentQuestion) {
-          window.quizData.push(currentQuestion);
+      let question = null;
+      let options = [];
+      let correct = [];
+
+      lines.forEach((line, idx) => {
+        line = line.trim();
+        
+        // First line is the question (starts with number or not)
+        if (idx === 0) {
+          question = line;
         }
-        currentQuestion = {
-          question: line,
-          options: [],
-          correct: []
-        };
-      }
-      // Option line (starts with letter and parenthesis)
-      else if (/^[a-z]\)/.test(line)) {
-        if (currentQuestion) {
-          const optionText = line.substring(2).trim();
-          const isCorrect = optionText.startsWith('*');
-          const cleanText = isCorrect ? optionText.substring(1).trim() : optionText;
+        // Other lines are options
+        else {
+          // Remove leading a), b), c) etc if present
+          let cleanLine = line.replace(/^[a-z]\)\s*/i, '').trim();
           
-          currentQuestion.options.push(cleanText);
-          if (isCorrect) {
-            currentQuestion.correct.push(currentQuestion.options.length - 1);
+          // Check if correct answer (starts with asterisk)
+          if (cleanLine.startsWith('*')) {
+            correct.push(options.length);
+            cleanLine = cleanLine.substring(1).trim();
           }
+          
+          options.push(cleanLine);
         }
+      });
+
+      if (question && options.length > 0) {
+        window.quizData.push({
+          question: question,
+          options: options,
+          correct: correct
+        });
       }
-    }
+    });
 
-    // Push last question
-    if (currentQuestion) {
-      window.quizData.push(currentQuestion);
+    console.log(`✓ Loaded ${window.quizData.length} questions`);
+    
+    // Show first question for debugging
+    if (window.quizData.length > 0) {
+      console.log('First question:', window.quizData[0]);
     }
-
-    console.log(`Loaded ${window.quizData.length} questions`);
+    
+    // Check if no questions loaded
+    if (window.quizData.length === 0) {
+      alert('No questions found in questions.txt. Please check the file format.');
+      return;
+    }
     
     // Validate questions
     const invalidQuestions = window.quizData
@@ -145,14 +161,17 @@ async function loadQuestions() {
     userAnswers = new Array(window.quizData.length).fill(null).map(() => []);
     
     // Display first question
-    displayQuestion(0);
-    updateQuestionStatus();
+    if (window.quizData.length > 0) {
+      displayQuestion(0);
+      updateQuestionStatus();
+    }
 
   } catch (error) {
     console.error('Error loading questions:', error);
-    alert('Failed to load questions. Please refresh the page.');
+    alert('Failed to load questions. Please check console (F12) for details.');
   }
 }
+
 
 // === SINGLE QUESTION DISPLAY ===
 function displayQuestion(index) {
