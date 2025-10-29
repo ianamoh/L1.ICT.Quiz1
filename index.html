@@ -32,22 +32,49 @@
       </div>
     </header>
 
-    <!-- Student Login Section -->
-    <div id="student-login-section" class="section-container">
-      <div class="login-card">
-        <div class="card-header">
-          <h2>👤 Student Authentication</h2>
-          <p>Enter your credentials to begin the quiz</p>
-        </div>
-        <div class="login-form">
-          <div class="form-group">
-            <label for="student-id">Student ID</label>
-            <input type="text" id="student-id" placeholder="e.g., A1.5" required>
-          </div>
-          <button onclick="validateStudent()" class="btn-primary">Start Quiz</button>
-        </div>
+<!-- Student Login Section -->
+<div id="student-login-section" class="section-container">
+  <div class="login-card">
+    <div class="card-header">
+      <h2>👤 Student Authentication</h2>
+      <p>Enter your Student ID to begin</p>
+    </div>
+    
+    <!-- Step 1: Enter ID -->
+    <div class="login-form" id="step-1-enter-id">
+      <div class="form-group">
+        <label for="student-id">Student ID</label>
+        <input type="text" id="student-id" placeholder="e.g., A1.5" required>
+      </div>
+      <button onclick="checkStudentId()" class="btn-primary">Check ID</button>
+    </div>
+
+    <!-- Step 2: Confirm Identity (Hidden Initially) -->
+    <div class="confirmation-card" id="step-2-confirm" style="display: none;">
+      <div class="welcome-banner">
+        <div class="welcome-icon">👋</div>
+        <h3>Welcome!</h3>
+        <div class="student-name-large" id="confirmed-name"></div>
+        <div class="student-id-badge" id="confirmed-id"></div>
+      </div>
+      
+      <div class="confirmation-question">
+        <p>Is this you?</p>
+      </div>
+      
+      <div class="confirmation-buttons">
+        <button onclick="startQuizConfirmed()" class="btn-success">
+          ✓ Yes, Start Quiz
+        </button>
+        <button onclick="resetLogin()" class="btn-secondary">
+          ← No, Try Again
+        </button>
       </div>
     </div>
+
+  </div>
+</div>
+
 
     <!-- Quiz Section (One Question at a Time) -->
     <div id="quiz-section" style="display: none;">

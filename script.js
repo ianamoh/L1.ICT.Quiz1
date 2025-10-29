@@ -43,8 +43,9 @@ async function checkExamAccess() {
   }
 }
 
-// === STUDENT VALIDATION ===
-async function validateStudent() {
+
+// === NEW: CHECK STUDENT ID (STEP 1) ===
+async function checkStudentId() {
   const studentId = document.getElementById('student-id').value.trim();
   
   if (!studentId) {
@@ -58,32 +59,76 @@ async function validateStudent() {
     const lines = text.trim().split('\n');
     
     let found = false;
+    let studentName = '';
+    
     for (let i = 1; i < lines.length; i++) {
       const parts = lines[i].split(',');
       if (parts[0] && parts[0].trim() === studentId) {
-        currentStudentId = studentId;
-        currentStudentName = parts[1] ? parts[1].trim() : 'Unknown';
+        studentName = parts[1] ? parts[1].trim() : 'Unknown';
         found = true;
         break;
       }
     }
 
     if (found) {
-      // Hide login, show quiz
-      document.getElementById('student-login-section').style.display = 'none';
-      document.getElementById('quiz-section').style.display = 'block';
+      // Store for later
+      currentStudentId = studentId;
+      currentStudentName = studentName;
       
-      // Load questions and start
-      await loadQuestions();
-      startTimer();
+      // Show confirmation step
+      document.getElementById('step-1-enter-id').classList.add('fade-out');
+      
+      setTimeout(() => {
+        document.getElementById('step-1-enter-id').style.display = 'none';
+        document.getElementById('step-2-confirm').style.display = 'block';
+        document.getElementById('confirmed-name').textContent = studentName;
+        document.getElementById('confirmed-id').textContent = `ID: ${studentId}`;
+      }, 300);
+      
     } else {
-      alert('Invalid Student ID. Please check and try again.');
+      alert('❌ Student ID not found!\n\nPlease check your ID and try again.');
+      document.getElementById('student-id').value = '';
+      document.getElementById('student-id').focus();
     }
+    
   } catch (error) {
     console.error('Student validation error:', error);
     alert('Error loading student data. Please try again.');
   }
 }
+
+// === NEW: START QUIZ AFTER CONFIRMATION (STEP 2) ===
+async function startQuizConfirmed() {
+  // Hide login section
+  document.getElementById('student-login-section').style.display = 'none';
+  document.getElementById('quiz-section').style.display = 'block';
+  
+  // Load questions and start timer
+  await loadQuestions();
+  startTimer();
+}
+
+// === NEW: RESET LOGIN (GO BACK TO STEP 1) ===
+function resetLogin() {
+  // Reset stored values
+  currentStudentId = '';
+  currentStudentName = '';
+  
+  // Clear input
+  document.getElementById('student-id').value = '';
+  
+  // Show step 1, hide step 2
+  document.getElementById('step-2-confirm').classList.add('fade-out');
+  
+  setTimeout(() => {
+    document.getElementById('step-2-confirm').style.display = 'none';
+    document.getElementById('step-2-confirm').classList.remove('fade-out');
+    document.getElementById('step-1-enter-id').style.display = 'block';
+    document.getElementById('step-1-enter-id').classList.remove('fade-out');
+    document.getElementById('student-id').focus();
+  }, 300);
+}
+
 
 // === LOAD QUESTIONS ===
 // === LOAD QUESTIONS (FIXED VERSION) ===
