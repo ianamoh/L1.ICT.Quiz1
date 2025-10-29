@@ -3,57 +3,109 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>L1 - ICT Test</title>
+  <title>ICT Quiz - University of Laghouat</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Global Lockout Overlay -->
-  <div id="global-lockout-message" style="display: none;">
-    <div id="lockout-text">Access Closed. Please wait for the scheduled time.</div>
+  <!-- Global Lockout Message -->
+  <div id="global-lockout-message" class="overlay">
+    <div id="lockout-text" class="lockout-message">Exam is currently closed. Please check back later.</div>
   </div>
 
-  <!-- Countdown Timer -->
-  <div id="countdown-timer">
-    <div id="timer-display">⏱ Time Remaining: <span id="timer-value">20:00</span></div>
-  </div>
+  <!-- Main Quiz Application -->
+  <div id="quiz-app" style="display: none;">
+    
+    <!-- Header with Timer -->
+    <header class="quiz-header">
+      <div class="header-content">
+        <div class="logo">
+          <h1>🎓 ICT Quiz</h1>
+          <p>University of Laghouat</p>
+        </div>
+        <div class="timer-display" id="timer">
+          <div class="timer-icon">⏱️</div>
+          <div class="timer-text">
+            <span id="time-remaining">20:00</span>
+            <small>Time Remaining</small>
+          </div>
+        </div>
+      </div>
+    </header>
 
-  <!-- Success Message (NEW) -->
-  <div id="success-banner" style="display: none;">
-    <div class="success-content">
-      <div class="success-icon">✓</div>
-      <div class="success-text">
-        <h2>Submission Successful!</h2>
-        <p id="success-message"></p>
+    <!-- Student Login Section -->
+    <div id="student-login-section" class="section-container">
+      <div class="login-card">
+        <div class="card-header">
+          <h2>👤 Student Authentication</h2>
+          <p>Enter your credentials to begin the quiz</p>
+        </div>
+        <div class="login-form">
+          <div class="form-group">
+            <label for="student-id">Student ID</label>
+            <input type="text" id="student-id" placeholder="e.g., A1.5" required>
+          </div>
+          <button onclick="validateStudent()" class="btn-primary">Start Quiz</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Quiz Application -->
-  <div id="quiz-app" style="display: none;">
-    <div class="container">
-      <h1>L1 - ICT Test <span class="instructor-tag">by Dr. Mohammed Naoumi</span></h1>
+    <!-- Quiz Section (One Question at a Time) -->
+    <div id="quiz-section" style="display: none;">
       
-      <form id="quiz-form">
-        <div class="header-section">
-          <label for="student-id">Student Code:</label>
-          <select id="student-id" required>
-            <option value="">-- Select your code --</option>
-          </select>
-          
-          <label for="student-name">Full Name:</label>
-          <input type="text" id="student-name" placeholder="Your name will appear here" readonly>
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div class="progress-info">
+          <span>Question <span id="current-q-num">1</span> of <span id="total-q-num">10</span></span>
+          <span id="progress-percent">0%</span>
         </div>
-        
-        <div id="quiz-container"></div>
-        
-        <button type="submit" id="submit-button" style="display: none;">
-          <span id="submit-text">Submit Test</span>
-          <span id="loading-spinner" style="display: none;">
-            <span class="spinner"></span> Submitting...
-          </span>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="question-status" id="question-status"></div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="question-card-container">
+        <div class="question-card" id="question-card">
+          <!-- Question content will be dynamically inserted here -->
+        </div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div class="navigation-buttons">
+        <button onclick="previousQuestion()" id="btn-previous" class="btn-nav btn-secondary">
+          ← Previous
         </button>
-      </form>
+        
+        <button onclick="flagQuestion()" id="btn-flag" class="btn-flag">
+          <span id="flag-icon">🚩</span> Flag for Review
+        </button>
+        
+        <button onclick="nextQuestion()" id="btn-next" class="btn-nav btn-primary">
+          Next →
+        </button>
+        
+        <button onclick="submitQuiz()" id="btn-submit" class="btn-submit" style="display: none;">
+          ✓ Submit Quiz
+        </button>
+      </div>
+
     </div>
+
+    <!-- Results Section -->
+    <div id="results-section" style="display: none;">
+      <div class="results-card">
+        <div class="results-icon">🎉</div>
+        <h2>Quiz Submitted Successfully!</h2>
+        <div class="results-info">
+          <p>Your answers have been recorded.</p>
+          <p><strong>Student:</strong> <span id="result-student-name"></span></p>
+          <p><strong>Submission Time:</strong> <span id="result-time"></span></p>
+        </div>
+        <p class="results-note">Your professor will review your submission.</p>
+      </div>
+    </div>
+
   </div>
 
   <script src="script.js"></script>
