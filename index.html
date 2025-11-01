@@ -18,11 +18,11 @@
     <!-- Header with Timer -->
     <header class="quiz-header">
       <div class="header-content">
-      <div class="logo">
-  <h1>🎓 ICT Quiz</h1>
-  <p>University of Laghouat</p>
-  <p class="author">by Dr. Naoumi</p>
-</div>
+        <div class="logo">
+          <h1>🎓 ICT Quiz</h1>
+          <p>University of Laghouat</p>
+          <p class="author">by Dr. Naoumi</p>
+        </div>
         <div class="timer-display" id="timer">
           <div class="timer-icon">⏱️</div>
           <div class="timer-text">
@@ -33,49 +33,48 @@
       </div>
     </header>
 
-<!-- Student Login Section -->
-<div id="student-login-section" class="section-container">
-  <div class="login-card">
-    <div class="card-header">
-      <h2>👤 Student Authentication</h2>
-      <p>Enter your Student ID to begin</p>
-    </div>
-    
-    <!-- Step 1: Enter ID -->
-    <div class="login-form" id="step-1-enter-id">
-      <div class="form-group">
-        <label for="student-id">Student ID</label>
-        <input type="text" id="student-id" placeholder="e.g., A1.5" required>
-      </div>
-      <button onclick="checkStudentId()" class="btn-primary">Check ID</button>
-    </div>
+    <!-- Student Login Section -->
+    <div id="student-login-section" class="section-container">
+      <div class="login-card">
+        <div class="card-header">
+          <h2>👤 Student Authentication</h2>
+          <p>Enter your Student ID to begin</p>
+        </div>
+        
+        <!-- Step 1: Enter ID -->
+        <div class="login-form" id="step-1-enter-id">
+          <div class="form-group">
+            <label for="student-id">Student ID</label>
+            <input type="text" id="student-id" placeholder="e.g., A1.5" required>
+          </div>
+          <button onclick="checkStudentId()" class="btn-primary">Check ID</button>
+        </div>
 
-    <!-- Step 2: Confirm Identity (Hidden Initially) -->
-    <div class="confirmation-card" id="step-2-confirm" style="display: none;">
-      <div class="welcome-banner">
-        <div class="welcome-icon">👋</div>
-        <h3>Welcome!</h3>
-        <div class="student-name-large" id="confirmed-name"></div>
-        <div class="student-id-badge" id="confirmed-id"></div>
-      </div>
-      
-      <div class="confirmation-question">
-        <p>Is this you?</p>
-      </div>
-      
-      <div class="confirmation-buttons">
-        <button onclick="startQuizConfirmed()" class="btn-success">
-          ✓ Yes, Start Quiz
-        </button>
-        <button onclick="resetLogin()" class="btn-secondary">
-          ← No, Try Again
-        </button>
+        <!-- Step 2: Confirm Identity (Hidden Initially) -->
+        <div class="confirmation-card" id="step-2-confirm" style="display: none;">
+          <div class="welcome-banner">
+            <div class="welcome-icon">👋</div>
+            <h3>Welcome!</h3>
+            <div class="student-name-large" id="confirmed-name"></div>
+            <div class="student-id-badge" id="confirmed-id"></div>
+          </div>
+          
+          <div class="confirmation-question">
+            <p>Is this you?</p>
+          </div>
+          
+          <div class="confirmation-buttons">
+            <button onclick="startQuizConfirmed()" class="btn-success">
+              ✓ Yes, Start Quiz
+            </button>
+            <button onclick="resetLogin()" class="btn-secondary">
+              ← No, Try Again
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
-
-  </div>
-</div>
-
 
     <!-- Quiz Section (One Question at a Time) -->
     <div id="quiz-section" style="display: none;">
@@ -134,6 +133,15 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Loading Spinner Overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <p class="loading-text">Submitting your quiz...</p>
+      <p class="loading-subtext">Please wait, do not close this page</p>
+    </div>
   </div>
 
   <script src="script.js"></script>

@@ -14,6 +14,18 @@ let flaggedQuestions = [];
 let currentStudentId = '';
 let currentStudentName = '';
 
+// === SESSION PROTECTION ===
+let quizInProgress = false;
+
+// Warn on page refresh/close
+window.addEventListener('beforeunload', (e) => {
+  if (quizInProgress && !hasSubmitted) {
+    e.preventDefault();
+    e.returnValue = 'Your quiz is in progress. Are you sure you want to leave?';
+    return e.returnValue;
+  }
+});
+
 // === ACCESS CONTROL ===
 async function checkExamAccess() {
   try {
@@ -43,13 +55,22 @@ async function checkExamAccess() {
   }
 }
 
-
-// === NEW: CHECK STUDENT ID (STEP 1) ===
+// === CHECK STUDENT ID (WITH SUBMISSION CHECK) ===
 async function checkStudentId() {
   const studentId = document.getElementById('student-id').value.trim();
   
   if (!studentId) {
     alert('Please enter your Student ID');
+    return;
+  }
+
+  // Check if this student already submitted
+  const submissionKey = 'hasSubmitted_' + studentId;
+  const alreadySubmitted = localStorage.getItem(submissionKey);
+  
+  if (alreadySubmitted === 'true') {
+    alert('⚠️ You have already submitted this quiz!\n\nYou cannot retake it.');
+    document.getElementById('student-id').value = '';
     return;
   }
 
@@ -97,8 +118,11 @@ async function checkStudentId() {
   }
 }
 
-// === NEW: START QUIZ AFTER CONFIRMATION (STEP 2) ===
+// === START QUIZ AFTER CONFIRMATION ===
 async function startQuizConfirmed() {
+  // Mark quiz as in progress
+  quizInProgress = true;
+  
   // Hide login section
   document.getElementById('student-login-section').style.display = 'none';
   document.getElementById('quiz-section').style.display = 'block';
@@ -108,7 +132,7 @@ async function startQuizConfirmed() {
   startTimer();
 }
 
-// === NEW: RESET LOGIN (GO BACK TO STEP 1) ===
+// === RESET LOGIN ===
 function resetLogin() {
   // Reset stored values
   currentStudentId = '';
@@ -129,9 +153,7 @@ function resetLogin() {
   }, 300);
 }
 
-
 // === LOAD QUESTIONS ===
-// === LOAD QUESTIONS (PERFECT FOR YOUR FORMAT) ===
 async function loadQuestions() {
   try {
     const response = await fetch('questions.txt');
@@ -202,7 +224,6 @@ async function loadQuestions() {
     
     if (invalidQuestions.length > 0) {
       console.warn(`⚠️ Questions with no correct answers: Q${invalidQuestions.join(', Q')}`);
-      alert(`Warning: ${invalidQuestions.length} question(s) have no correct answer marked!\n\nQuestions: ${invalidQuestions.join(', ')}`);
     } else {
       console.log('✅ All questions have correct answers marked!');
     }
@@ -222,8 +243,6 @@ async function loadQuestions() {
   }
 }
 
-
-
 // === SINGLE QUESTION DISPLAY ===
 function displayQuestion(index) {
   currentQuestionIndex = index;
@@ -239,17 +258,16 @@ function displayQuestion(index) {
   document.getElementById('progress-fill').style.width = progress + '%';
   document.getElementById('progress-percent').textContent = Math.round(progress) + '%';
   
+  // Build question HTML with student watermark
+  let html = `
+    <div class="question-header-row">
+      <div class="question-number">Question ${index + 1}</div>
+      <div class="student-watermark">for ${currentStudentName}</div>
+    </div>
+    <div class="question-text">${question.question}</div>
+    <div class="options-container">
+  `;
   
-// Build question HTML
-let html = `
-  <div class="question-header-row">
-    <div class="question-number">Question ${index + 1}</div>
-    <div class="student-watermark">for ${currentStudentName}</div>
-  </div>
-  <div class="question-text">${question.question}</div>
-  <div class="options-container">
-`;
-
   question.options.forEach((option, i) => {
     const optionLetter = String.fromCharCode(97 + i); // a, b, c, d...
     const isSelected = userAnswers[index] && userAnswers[index].includes(i);
@@ -276,6 +294,9 @@ let html = `
   updateNavigationButtons(index);
   updateQuestionStatus();
 }
+
+// Continue in next part...
+// ... (continued from Part 1)
 
 // === SELECT OPTION ===
 function selectOption(questionIndex, optionIndex) {
@@ -343,7 +364,6 @@ function updateNavigationButtons(index) {
   const btnPrev = document.getElementById('btn-previous');
   const btnNext = document.getElementById('btn-next');
   const btnSubmit = document.getElementById('btn-submit');
-  const btnFlag = document.getElementById('btn-flag');
   
   // Previous button
   btnPrev.style.display = index > 0 ? 'block' : 'none';
@@ -358,6 +378,7 @@ function updateNavigationButtons(index) {
   }
   
   // Update flag button state
+  const btnFlag = document.getElementById('btn-flag');
   if (flaggedQuestions.includes(index)) {
     btnFlag.classList.add('flagged');
     document.getElementById('flag-icon').textContent = '🚩';
@@ -414,7 +435,7 @@ function startTimer() {
   }, 1000);
 }
 
-// === SUBMIT QUIZ ===
+// === SUBMIT QUIZ (WITH SPINNER) ===
 async function submitQuiz() {
   if (hasSubmitted) {
     alert('You have already submitted this quiz.');
@@ -431,6 +452,9 @@ async function submitQuiz() {
     if (!confirmSubmit) return;
   }
 
+  // Show loading spinner
+  document.getElementById('loading-overlay').style.display = 'flex';
+  
   // Stop timer
   clearInterval(timerInterval);
 
@@ -482,8 +506,12 @@ async function submitQuiz() {
     const result = await res.json();
     console.log('Submission result:', result);
 
+    // Hide loading spinner
+    document.getElementById('loading-overlay').style.display = 'none';
+
     if (result.status === 'SUCCESS') {
       hasSubmitted = true;
+      quizInProgress = false; // Quiz complete
       localStorage.setItem('hasSubmitted_' + currentStudentId, 'true');
       
       // Show results
@@ -498,11 +526,15 @@ async function submitQuiz() {
 
   } catch (error) {
     console.error('Submission error:', error);
+    
+    // Hide loading spinner
+    document.getElementById('loading-overlay').style.display = 'none';
+    
     alert('Failed to submit quiz. Please try again or contact your professor.');
   }
 }
 
-// === ANTI-CHEATING MEASURES (Optional) ===
+// === ANTI-CHEATING MEASURES ===
 // Disable right-click
 document.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -516,7 +548,7 @@ document.addEventListener('keyup', e => {
 
 // Detect tab switching
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
+  if (document.hidden && quizInProgress) {
     console.warn('Student switched tabs at: ' + new Date().toISOString());
   }
 });
