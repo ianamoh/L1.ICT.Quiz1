@@ -572,3 +572,26 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('DOMContentLoaded', () => {
   checkExamAccess();
 });
+
+// === MOBILE SCREENSHOT DETECTION ===
+document.addEventListener('keydown', (e) => {
+  // PC: PrintScreen = 44
+  if (e.keyCode === 44) {
+    alert('Screenshots are not allowed during the quiz.');
+    e.preventDefault();
+  }
+});
+
+// Mobile: Volume keys (some devices use this for screenshot)
+document.addEventListener('keyup', (e) => {
+  // Volume down + power = screenshot on some Android devices
+  // Can't reliably detect this via JavaScript
+  console.warn('⚠️ Screenshot attempt detected (mobile)');
+});
+
+// Alternative: Monitor visibility changes (student switching apps)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    console.warn('⚠️ Student switched away from quiz (possibly taking screenshot or cheating)');
+  }
+});
