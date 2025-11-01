@@ -6,8 +6,6 @@ const QUIZ_DURATION_MINUTES = 20;
 window.quizData = [];
 let hasSubmitted = false;
 let timerInterval = null;
-
-// === NEW: Single Question Navigation ===
 let currentQuestionIndex = 0;
 let userAnswers = [];
 let flaggedQuestions = [];
@@ -16,6 +14,8 @@ let currentStudentName = '';
 
 // === SESSION PROTECTION ===
 let quizInProgress = false;
+let browserHasSubmitted = false; // NEW: Track if THIS browser submitted
+
 
 // Warn on page refresh/close
 window.addEventListener('beforeunload', (e) => {
@@ -64,15 +64,24 @@ async function checkStudentId() {
     return;
   }
 
-  // Check if this student already submitted
-  const submissionKey = 'hasSubmitted_' + studentId;
-  const alreadySubmitted = localStorage.getItem(submissionKey);
-  
-  if (alreadySubmitted === 'true') {
-    alert('⚠️ You have already submitted this quiz!\n\nYou cannot retake it.');
-    document.getElementById('student-id').value = '';
-    return;
-  }
+ // Check if THIS browser already submitted any quiz (browser lock)
+const browserSubmitted = localStorage.getItem('browser_submitted_quiz');
+if (browserSubmitted === 'true') {
+  alert('You have already submitted this quiz!!'); // Two exclamation marks = browser used
+  document.getElementById('student-id').value = '';
+  return;
+}
+
+// Check if this specific student already submitted
+const submissionKey = 'hasSubmitted_' + studentId;
+const alreadySubmitted = localStorage.getItem(submissionKey);
+
+if (alreadySubmitted === 'true') {
+  alert('You have already submitted this quiz!'); // One exclamation mark = student ID used
+  document.getElementById('student-id').value = '';
+  return;
+}
+
 
   try {
     const response = await fetch('students.txt');
@@ -92,11 +101,9 @@ async function checkStudentId() {
     }
 
     if (found) {
-      // Store for later
       currentStudentId = studentId;
       currentStudentName = studentName;
       
-      // Show confirmation step
       document.getElementById('step-1-enter-id').classList.add('fade-out');
       
       setTimeout(() => {
@@ -107,7 +114,7 @@ async function checkStudentId() {
       }, 300);
       
     } else {
-      alert('❌ Student ID not found!\n\nPlease check your ID and try again.');
+      alert('Student ID not found. Please check and try again.');
       document.getElementById('student-id').value = '';
       document.getElementById('student-id').focus();
     }
@@ -117,6 +124,7 @@ async function checkStudentId() {
     alert('Error loading student data. Please try again.');
   }
 }
+
 
 // === START QUIZ AFTER CONFIRMATION ===
 async function startQuizConfirmed() {
@@ -509,18 +517,25 @@ async function submitQuiz() {
     // Hide loading spinner
     document.getElementById('loading-overlay').style.display = 'none';
 
-    if (result.status === 'SUCCESS') {
-      hasSubmitted = true;
-      quizInProgress = false; // Quiz complete
-      localStorage.setItem('hasSubmitted_' + currentStudentId, 'true');
-      
-      // Show results
-      document.getElementById('quiz-section').style.display = 'none';
-      document.getElementById('results-section').style.display = 'block';
-      document.getElementById('result-student-name').textContent = currentStudentName;
-      document.getElementById('result-time').textContent = new Date().toLocaleString();
-      
-    } else {
+if (result.status === 'SUCCESS') {
+  hasSubmitted = true;
+  quizInProgress = false;
+  browserHasSubmitted = true; // NEW
+  
+  // Mark this student as submitted
+  localStorage.setItem('hasSubmitted_' + currentStudentId, 'true');
+  
+  // NEW: Mark this browser as having submitted ANY quiz
+  localStorage.setItem('browser_submitted_quiz', 'true');
+  
+  // Show results
+  document.getElementById('quiz-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('result-student-name').textContent = currentStudentName;
+  document.getElementById('result-time').textContent = new Date().toLocaleString();
+}
+
+ else {
       alert('Submission failed: ' + (result.message || 'Unknown error'));
     }
 
