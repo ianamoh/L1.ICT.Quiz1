@@ -642,3 +642,52 @@ body {
     transform: scale(0.95);
   }
 }
+
+/* Author styling */
+.author {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Make Check ID button bigger */
+.login-form .btn-primary {
+  padding: 18px 40px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  width: 100%;
+}
+
+/* Question header row with student name */
+.question-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.student-watermark {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+  color: #dc2626;
+  padding: 6px 15px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-style: italic;
+}
+
+/* Make question number inline with watermark */
+.question-number {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: var(--white);
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}

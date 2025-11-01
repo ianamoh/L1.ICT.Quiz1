@@ -239,13 +239,17 @@ function displayQuestion(index) {
   document.getElementById('progress-fill').style.width = progress + '%';
   document.getElementById('progress-percent').textContent = Math.round(progress) + '%';
   
-  // Build question HTML
-  let html = `
-    <div class="question-number">Question ${index + 1}</div>
-    <div class="question-text">${question.question}</div>
-    <div class="options-container">
-  `;
   
+// Build question HTML
+let html = `
+  <div class="question-header-row">
+    <div class="question-number">Question ${index + 1}</div>
+    <div class="student-watermark">for ${currentStudentName}</div>
+  </div>
+  <div class="question-text">${question.question}</div>
+  <div class="options-container">
+`;
+
   question.options.forEach((option, i) => {
     const optionLetter = String.fromCharCode(97 + i); // a, b, c, d...
     const isSelected = userAnswers[index] && userAnswers[index].includes(i);

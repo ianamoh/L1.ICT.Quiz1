@@ -51,6 +51,7 @@ Q: Literacy means:
 A: Intelligence
 A: Processing
 A: Development
+A: Abilities
 
 ---
 
