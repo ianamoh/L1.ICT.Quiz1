@@ -131,43 +131,43 @@ function resetLogin() {
 
 
 // === LOAD QUESTIONS ===
-// === LOAD QUESTIONS (FIXED VERSION) ===
+// === LOAD QUESTIONS (PERFECT FOR YOUR FORMAT) ===
 async function loadQuestions() {
   try {
     const response = await fetch('questions.txt');
     const text = await response.text();
     
-    // Split by double newlines first (question blocks)
-    const blocks = text.split(/\n\s*\n/);
+    console.log('Loading questions...');
+    
+    // Split by "---" separator
+    const blocks = text.split('---').map(b => b.trim()).filter(b => b);
     window.quizData = [];
 
-    blocks.forEach((block) => {
-      const lines = block.trim().split('\n').filter(line => line.trim());
+    blocks.forEach((block, blockIndex) => {
+      const lines = block.split(/\r?\n/).map(line => line.trim()).filter(line => line);
+      
       if (lines.length === 0) return;
 
-      let question = null;
+      let question = '';
       let options = [];
       let correct = [];
 
-      lines.forEach((line, idx) => {
-        line = line.trim();
-        
-        // First line is the question (starts with number or not)
-        if (idx === 0) {
-          question = line;
+      lines.forEach((line) => {
+        // Question line (starts with Q:)
+        if (line.startsWith('Q:')) {
+          question = line.substring(2).trim();
         }
-        // Other lines are options
-        else {
-          // Remove leading a), b), c) etc if present
-          let cleanLine = line.replace(/^[a-z]\)\s*/i, '').trim();
+        // Answer line (starts with A:)
+        else if (line.startsWith('A:')) {
+          let answerText = line.substring(2).trim();
           
-          // Check if correct answer (starts with asterisk)
-          if (cleanLine.startsWith('*')) {
+          // Check if asterisk at the end
+          if (answerText.endsWith('*')) {
             correct.push(options.length);
-            cleanLine = cleanLine.substring(1).trim();
+            answerText = answerText.slice(0, -1).trim(); // Remove asterisk
           }
           
-          options.push(cleanLine);
+          options.push(answerText);
         }
       });
 
@@ -177,14 +177,16 @@ async function loadQuestions() {
           options: options,
           correct: correct
         });
+        
+        console.log(`Q${blockIndex + 1}: ${question.substring(0, 30)}... [${correct.length} correct answer(s)]`);
       }
     });
 
-    console.log(`✓ Loaded ${window.quizData.length} questions`);
+    console.log(`✅ Successfully loaded ${window.quizData.length} questions`);
     
-    // Show first question for debugging
+    // Debug first question
     if (window.quizData.length > 0) {
-      console.log('First question:', window.quizData[0]);
+      console.log('Sample question:', window.quizData[0]);
     }
     
     // Check if no questions loaded
@@ -200,6 +202,9 @@ async function loadQuestions() {
     
     if (invalidQuestions.length > 0) {
       console.warn(`⚠️ Questions with no correct answers: Q${invalidQuestions.join(', Q')}`);
+      alert(`Warning: ${invalidQuestions.length} question(s) have no correct answer marked!\n\nQuestions: ${invalidQuestions.join(', ')}`);
+    } else {
+      console.log('✅ All questions have correct answers marked!');
     }
 
     // Initialize user answers array
@@ -212,10 +217,11 @@ async function loadQuestions() {
     }
 
   } catch (error) {
-    console.error('Error loading questions:', error);
+    console.error('❌ Error loading questions:', error);
     alert('Failed to load questions. Please check console (F12) for details.');
   }
 }
+
 
 
 // === SINGLE QUESTION DISPLAY ===
